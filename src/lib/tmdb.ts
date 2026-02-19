@@ -35,3 +35,10 @@ export async function getSeasonDetails(tvId: string, seasonNumber: number) {
     );
     return await res.json();
 }
+
+export async function getMovieDetails(id: string) {
+    const res = await fetch(
+        `${config.databaseApiUrl}/movie/${id}?api_key=${config.tmdbApiKey}`
+    );
+    return await res.json();
+}

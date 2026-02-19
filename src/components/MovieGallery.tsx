@@ -14,13 +14,13 @@ const STATIC_ROMANTIC_MOVIES: MediaItem[] = [
     {
         id: "313369",
         title: "La La Land",
-        poster: "https://image.tmdb.org/t/p/w500/qO5kS0jm0Fkj0tG7q2tq0y10P87.jpg",
+        poster: "https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg",
         type: "movie",
     },
     {
         id: "597",
         title: "Titanic",
-        poster: "https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8KyX43SvCtlnFbxData.jpg",
+        poster: "https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg",
         type: "movie",
     },
     {
@@ -50,7 +50,7 @@ const STATIC_ROMANTIC_MOVIES: MediaItem[] = [
     {
         id: "1399",
         title: "Game of Thrones",
-        poster: "https://image.tmdb.org/t/p/w500/2IWouZKIPC7QJc4l2gKZHuk4B7.jpg",
+        poster: "https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
         type: "tv",
     }
 ];
