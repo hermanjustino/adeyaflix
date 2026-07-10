@@ -1,0 +1,216 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+suppressPackageStartupMessages({
+library(devtools)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(monocle3)
+library(reshape2)
+library(readr)
+library(conflicted)
+})
+
+conflict_prefer("mutate", "dplyr")
+conflict_prefer("filter", "dplyr")
+conflict_prefer("select", "dplyr")
+conflict_prefer("rename", "dplyr")
+conflict_prefer("summarise", "dplyr")
+conflict_prefer("arrange", "dplyr")
+conflict_prefer("union", "base")
+conflicts_prefer(monocle3::pData)
+
+
+```
+
+
+```{ r Load DEG results}
+
+deg_results_jmf <- readRDS("/Users/adeyawyatt/Desktop/BLCL_ND_Exposure_Screens/Jose_BLCL_DEG.list_100125.rds") # put path to the file i sent you here 
+
+```
+
+
+```{r}
+
+# ──────────────────────────────────────────────────────────────
+# 1. CYTOKINES (Dictionary Hits + Strict List)
+# ──────────────────────────────────────────────────────────────
+cytokine_ligands <- c(
+  "IL32", "IL7", "IL15", "IL16", "IL19", "EBI3",
+  "TNF", "LTA", "TNFSF9", "TNFSF10", "TNFSF11", "TNFSF13B", "TNFSF14", "CD70",
+  "TGFB1", "BMP6", "GDF11", "VEGFA", "VEGFB",
+  "DDT", "NAMPT", "GRN", "HMGB1", "CD40LG" # CD40L official HGNC symbol
+)
+
+# Core signaling receptors from your strict list
+cytokine_receptors <- c(
+  "IL2RA", "IL2RB", "IL2RG", "IL3RA", "IL4R", "IL6R", "IL6ST", "IL9R", 
+  "IL10RA", "IL10RB", "IL12RB1", "IL12RB2", "IL15RA", "IL17RA", "IL17RB", 
+  "IL18R1", "IL18BP", "IL20RB", "IL21R", "IL23R", "IL27RA",
+  "TNFRSF1A", "TNFRSF1B", "TNFRSF8", "TNFRSF10A", "TNFRSF10B", "TNFRSF10D", 
+  "TNFRSF13B", "TNFRSF13C", "TNFRSF14", "TNFRSF17", "TNFRSF19",
+  "TGFBR1", "TGFBR3", "ENG", "BMPR1A", "BMPR2",
+  "IFNAR1", "IFNAR2", "IFNGR1", "IFNGR2", "IFNLR1",
+  "CSF2RB", "LEPR", "GHR", "CMKLR1", "CD74", "CD44"
+)
+
+# Downstream responsive / non-coding / modulator elements
+cytokine_downstream_modulators <- c(
+  "IL4I1", "TNFAIP1", "TNFAIP2", "TNFAIP3", "TNFAIP8", "TNFAIP8L1",
+  "TGFBRAP1", "LTBP1", "LTBP4", "TWSG1", "IFNG-AS1", "CSF1"
+)
+
+# ──────────────────────────────────────────────────────────────
+# 2. CHEMOKINES & RECEPTORS
+# ──────────────────────────────────────────────────────────────
+chemokine_ccl <- c(
+  "CCL1", "CCL2", "CCL3", "CCL3L1", "CCL3L3", "CCL4", "CCL4L1", "CCL4L2", 
+  "CCL5", "CCL7", "CCL8", "CCL11", "CCL13", "CCL14", "CCL15", "CCL16", 
+  "CCL17", "CCL18", "CCL19", "CCL20", "CCL21", "CCL22", "CCL23", "CCL24", 
+  "CCL25", "CCL26", "CCL27", "CCL28"
+)
+
+chemokine_cxcl <- c(
+  "CXCL1", "CXCL2", "CXCL3", "CXCL4", "CXCL4V1", "CXCL5", "CXCL6", "PPBP", 
+  "CXCL8", "CXCL9", "CXCL10", "CXCL11", "CXCL12", "CXCL13", "CXCL14", 
+  "CXCL16", "CXCL17"
+)
+
+chemokine_other <- c("XCL1", "XCL2", "CX3CL1")
+
+chemokine_receptors <- c("CCR7")
+
+# Standardized HGNC symbols for your specific dictionary results
+dictionary_hgnc <- c("CD40LG", "IFNB1", "IFNG", "IFNW1", "IL1B", "IL2", "IL13", "IL15", "IL21", "IL32")
+
+# Combine everything into one single master vector
+chemo_cyto_list <- unique(c(
+  cytokine_ligands,
+  cytokine_receptors,
+  cytokine_downstream_modulators,
+  chemokine_ccl,
+  chemokine_cxcl,
+  chemokine_other,
+  chemokine_receptors,
+  dictionary_hgnc
+))
+
+# Alphabetize the final list for readability
+chemo_cyto_list <- sort(chemo_cyto_list)
+
+# Verify the length of your final target features
+print(length(chemo_cyto_list)) # final list of genes 
+
+
+
+
+
+```
+
+
+```{r Heatmap Across Union Genes (annotated)}
+
+
+# union genes = unique set of genes that are statistically significant 
+
+
+# Step 1: get union DEG gene names (significant anywhere)
+union_cytokine_genes <- deg_results_jmf %>%
+  filter(term != "(Intercept)",q_value < 0.001, gene_short_name %in% chemo_cyto_list) %>%
+  pull(gene_short_name) %>%
+  unique()
+
+# Step 2: build matrix (genes x exposures)
+mat <- deg_results_jmf %>%
+  filter(term != "(Intercept)") %>%
+  filter(gene_short_name %in% union_cytokine_genes) %>%
+  group_by(gene_short_name, Exposure) %>%
+  summarise(mean_effect = mean(normalized_effect), .groups = "drop") %>%
+  pivot_wider(names_from = Exposure, values_from = mean_effect, values_fill = 0) %>%
+  column_to_rownames("gene_short_name") %>%
+  as.matrix()
+
+row_anno <- data.frame(
+  Category = case_when(
+    rownames(mat) %in% cytokine_ligands               ~ "Cytokine ligand",
+    rownames(mat) %in% cytokine_receptors             ~ "Cytokine receptor",
+    rownames(mat) %in% cytokine_downstream_modulators ~ "Cytokine modulator",
+    rownames(mat) %in% chemokine_ccl                  ~ "CCL chemokine",
+    rownames(mat) %in% chemokine_cxcl                 ~ "CXCL chemokine",
+    rownames(mat) %in% chemokine_other                ~ "Chemokine (other)",
+    rownames(mat) %in% chemokine_receptors            ~ "Chemokine receptor",
+    rownames(mat) %in% dictionary_hgnc                ~ "Cytokine ligand", # these overlap
+    TRUE                                              ~ "Other"
+  ),
+  row.names = rownames(mat)
+)
+
+# Custom colors for each category
+anno_colors <- list(
+  Category = c(
+    "Cytokine ligand"    = "#E41A1C",
+    "Cytokine receptor"  = "#FF7F00",
+    "Cytokine modulator" = "#FDBF6F",
+    "CCL chemokine"      = "#377EB8",
+    "CXCL chemokine"     = "#A6CEE3",
+    "Chemokine (other)"  = "#984EA3",
+    "Chemokine receptor" = "#4DAF4A",
+    "Other"              = "grey80"
+  )
+)
+
+pheatmap(mat,
+         cluster_rows = TRUE,
+         cluster_cols = TRUE,
+         clustering_method = "complete",
+         annotation_row = row_anno,
+         annotation_colors = anno_colors,
+         color = colorRampPalette(c("steelblue", "white", "firebrick"))(100),
+         breaks = seq(-0.15, 0.15, length.out = 101),
+         fontsize_row = 6,
+         fontsize_col = 10,
+         angle_col = 45,
+         main = "Cytokine/chemokine union DEGs (q < 0.001 in ≥1 condition)",
+         filename = "chemo_cyto_curated_heatmap_annotated.pdf",
+         width = 9, height = 16)
+
+
+
+```
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
